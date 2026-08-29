@@ -841,20 +841,46 @@ function renderReport(data){
   `;
   document.getElementById('reportContent').innerHTML=html;
 
-  const navy='#0D1B3E',gold='#D4A837',colors=['#0D1B3E','#1a2f5e','#D4A837','#F5E199','#1A9E6B','#6B7694','#D63B3B'];
-  function mkChart(id,type,labels,vals,opts={}){
-    const ctx=document.getElementById(id)?.getContext('2d');if(!ctx)return;
-    const c=new Chart(ctx,{type,data:{labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:0,...(type==='bar'?{backgroundColor:navy,borderRadius:6}:{})}]},options:{responsive:true,plugins:{legend:{display:type!=='bar'},tooltip:{callbacks:{label:ctx=>` ${ctx.raw} responses (${pct(ctx.raw,n)}%)`}}},scales:type==='bar'?{x:{grid:{display:false}},y:{grid:{color:'#f0f0f0'},beginAtZero:true}}:{}}});
+  const navy='#0D1B3E';
+
+  // ── Distinct palettes per chart ──
+  const paletteBar     = '#0D1B3E';   // single navy for all bar charts (consistent)
+  const paletteBarKL   = ['#C8E6FA','#7BB8F0','#2E7DD6','#1A4FA0','#0D1B3E']; // light→dark blue gradient for knowledge 1-5
+  const paletteNT      = ['#0D1B3E','#2E5FA3','#D4A837','#F5E199','#1A9E6B','#B0B8CC']; // Morning→NoPreference — clear separation
+  const paletteOR      = ['#0D1B3E','#D4A837','#1A9E6B'];  // navy, gold, green — totally distinct
+  const paletteEXP     = ['#1A9E6B','#D63B3B'];            // green=Yes, red=No
+
+  function mkChart(id, type, labels, vals, customColors){
+    const ctx = document.getElementById(id)?.getContext('2d');
+    if(!ctx) return;
+    let bgColor;
+    if(customColors){ bgColor = customColors; }
+    else if(type==='bar'){ bgColor = paletteBar; }
+    else { bgColor = paletteNT; } // fallback for doughnut
+
+    const c = new Chart(ctx, {
+      type,
+      data: { labels, datasets:[{ data:vals, backgroundColor:bgColor, borderWidth: type==='doughnut'?2:0, borderColor:'#fff', borderRadius: type==='bar'?6:0 }] },
+      options: {
+        responsive:true,
+        plugins:{
+          legend:{ display: type!=='bar', labels:{ boxWidth:14, padding:14, font:{size:12} } },
+          tooltip:{ callbacks:{ label: ctx => ` ${ctx.raw} responses (${pct(ctx.raw,n)}%)` } }
+        },
+        scales: type==='bar' ? { x:{grid:{display:false}}, y:{grid:{color:'#f0f0f0'},beginAtZero:true} } : {}
+      }
+    });
     chartInstances.push(c);
   }
+
   if(n>0){
     mkChart('chartFA','bar',Object.keys(FA),Object.values(FA));
     mkChart('chartET','bar',Object.keys(ET),Object.values(ET));
-    mkChart('chartKL','bar',['1','2','3','4','5'],KL);
-    mkChart('chartNT','doughnut',Object.keys(NT),Object.values(NT));
-    mkChart('chartOR','doughnut',['Knowledge-Oriented','Skill-building','Fun+Competitive'],[OR.Knowledge,OR.Skill,OR.Fun]);
+    mkChart('chartKL','bar',['1','2','3','4','5'],KL, paletteBarKL);
+    mkChart('chartNT','doughnut',Object.keys(NT),Object.values(NT), paletteNT);
+    mkChart('chartOR','doughnut',['Knowledge-Oriented','Skill-building','Fun+Competitive'],[OR.Knowledge,OR.Skill,OR.Fun], paletteOR);
     const yesExp=data.filter(r=>r['Prior Finance Exp']==='Yes').length;
-    mkChart('chartEXP','doughnut',['Yes','No'],[yesExp,n-yesExp],{colors:['#1A9E6B','#DDE1F0']});
+    mkChart('chartEXP','doughnut',['Yes','No'],[yesExp,n-yesExp], paletteEXP);
   } else {
     document.querySelectorAll('.chart-card canvas').forEach(c=>{
       const div=c.parentElement;
