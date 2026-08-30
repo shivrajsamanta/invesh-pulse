@@ -180,6 +180,35 @@
 .login-err{background:#FFF0F0;border:1.5px solid var(--error);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--error);margin-bottom:16px;display:none}
 .login-err.show{display:block}
 
+/* ── Form Closed Screen ── */
+.closed-screen{text-align:center;padding:44px 24px}
+.closed-icon{width:72px;height:72px;background:linear-gradient(135deg,#1A1F36,#2E3558);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:32px;box-shadow:0 4px 18px rgba(13,27,62,0.2)}
+.closed-title{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:10px}
+.closed-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;max-width:360px;margin-left:auto;margin-right:auto}
+.closed-badge{display:inline-block;background:#FFF0F0;border:1.5px solid #D63B3B;color:#D63B3B;font-size:12px;font-weight:700;padding:6px 18px;border-radius:20px;letter-spacing:.5px;margin-bottom:20px}
+.closed-note{font-size:12px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:16px;margin-top:8px}
+
+/* ── Form Toggle Switch ── */
+.toggle-bar{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:var(--radius);padding:16px 22px;box-shadow:var(--shadow);margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.toggle-bar-left{display:flex;flex-direction:column;gap:3px}
+.toggle-bar-title{font-size:14px;font-weight:700;color:var(--navy)}
+.toggle-bar-sub{font-size:12px;color:var(--muted)}
+.toggle-wrap{display:flex;align-items:center;gap:12px}
+.toggle-status{font-size:13px;font-weight:700}
+.toggle-status.open{color:var(--success)}
+.toggle-status.closed{color:var(--error)}
+.toggle-switch{position:relative;width:52px;height:28px;cursor:pointer;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:#DDE1F0;border-radius:28px;transition:background .3s}
+.toggle-switch input:checked + .toggle-track{background:var(--success)}
+.toggle-thumb{position:absolute;width:22px;height:22px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .3s;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+.toggle-switch input:checked ~ .toggle-thumb{transform:translateX(24px)}
+.toggle-updating{font-size:11px;color:var(--muted);margin-top:4px}
+/* Checking screen */
+.checking-screen{text-align:center;padding:48px 24px}
+.checking-spin{font-size:36px;animation:spin 1s linear infinite;display:inline-block;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* ── ADMIN LOGIN ── */
 .admin-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,62,.7);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .admin-overlay.show{display:flex}
@@ -328,8 +357,34 @@
 </div>
 
 <!-- ── PROGRESS BAR ── -->
+<!-- ── CHECKING SCREEN ── -->
+<div id="checkingScreen" class="form-wrap" style="max-width:660px;margin:0 auto;padding:0 16px;margin-top:-28px;position:relative;z-index:2">
+  <div class="form-card" style="border-radius:var(--radius)">
+    <div class="checking-screen">
+      <div class="checking-spin">⏳</div>
+      <p style="color:var(--muted);font-size:14px">Checking form status…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── FORM CLOSED SCREEN ── -->
+<div id="closedScreen" class="form-wrap" style="max-width:660px;margin:0 auto;padding:0 16px;margin-top:-28px;position:relative;z-index:2;display:none">
+  <div class="form-card" style="border-radius:var(--radius)">
+    <div class="closed-screen">
+      <div class="closed-icon">🔒</div>
+      <div class="closed-badge">● Form Closed</div>
+      <div class="closed-title">Responses are no longer being accepted</div>
+      <div class="closed-sub">The INVESH Batch Pulse survey has been closed by the team. If you believe this is an error, please reach out to the INVESH team directly.</div>
+      <div class="closed-note">
+        Thank you for your interest in INVESH — Finance Club of SIOM.<br>
+        Stay tuned for upcoming events and announcements.
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── LOGIN SCREEN — outside formWrap so it shows on load ── -->
-<div id="loginScreen" class="form-wrap" style="max-width:660px;margin:0 auto;padding:0 16px;margin-top:-28px;position:relative;z-index:2">
+<div id="loginScreen" class="form-wrap" style="max-width:660px;margin:0 auto;padding:0 16px;margin-top:-28px;position:relative;z-index:2;display:none">
   <div class="form-card" style="border-radius:var(--radius)">
     <div class="login-screen">
       <div class="login-icon">🔐</div>
@@ -582,7 +637,23 @@
       <button class="btn-pdf" id="pdfBtn" onclick="downloadPDF()">🖨 Download Report</button>
     </div>
   </div>
-  <div class="filter-bar">
+  <div class="toggle-bar" id="toggleBar">
+    <div class="toggle-bar-left">
+      <div class="toggle-bar-title">Form Responses</div>
+      <div class="toggle-bar-sub" id="toggleSub">Loading status…</div>
+    </div>
+    <div class="toggle-wrap">
+      <span class="toggle-status" id="toggleStatusLabel">—</span>
+      <label class="toggle-switch" title="Toggle form open/closed">
+        <input type="checkbox" id="formToggle" onchange="setFormOpen(this.checked)" disabled>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+  </div>
+  <div class="toggle-updating" id="toggleUpdating" style="display:none;margin-top:-14px;margin-bottom:12px;text-align:right">⏳ Updating…</div>
+
+<div class="filter-bar">
     <div class="filter-group">
       <label>Batch</label>
       <select id="filterBatchSelect" onchange="applyFilters()">
@@ -829,6 +900,12 @@ async function submitForm(){
     if(SCRIPT_URL!=='YOUR_APPS_SCRIPT_URL_HERE'){
       const res = await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
       const json = await res.json();
+      if(json.status === 'closed'){
+        btn.disabled=false;
+        btn.innerHTML='Submit Pulse ✦';
+        showSubmitWarning('🔒 <strong>The form has been closed.</strong><br>Responses are no longer being accepted. Please contact the INVESH team if you need assistance.');
+        return;
+      }
       if(json.status === 'duplicate'){
         btn.disabled=false;
         btn.innerHTML='Submit Pulse ✦';
@@ -856,6 +933,59 @@ async function submitForm(){
   for(let i=0;i<4;i++){const d=document.getElementById('dot'+i);d.classList.remove('active');d.classList.add('done');}
   document.getElementById('successScreen').classList.add('show');
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Form Open/Close Toggle ──
+async function loadFormStatus() {
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=status&t=' + Date.now());
+    const data = await res.json();
+    updateToggleUI(data.open);
+  } catch(err) {
+    document.getElementById('toggleSub').textContent = 'Could not fetch status';
+  }
+}
+
+function updateToggleUI(isOpen) {
+  const toggle = document.getElementById('formToggle');
+  const label = document.getElementById('toggleStatusLabel');
+  const sub = document.getElementById('toggleSub');
+  toggle.checked = isOpen;
+  toggle.disabled = false;
+  if (isOpen) {
+    label.textContent = 'OPEN';
+    label.className = 'toggle-status open';
+    sub.textContent = 'Students can currently access and submit the form';
+  } else {
+    label.textContent = 'CLOSED';
+    label.className = 'toggle-status closed';
+    sub.textContent = 'Form is closed — students see a "Form Closed" screen';
+  }
+}
+
+async function setFormOpen(open) {
+  const updatingEl = document.getElementById('toggleUpdating');
+  const toggle = document.getElementById('formToggle');
+  toggle.disabled = true;
+  updatingEl.style.display = 'block';
+  try {
+    const res = await fetch(
+      `${SCRIPT_URL}?action=setOpen&key=${encodeURIComponent(adminKey)}&value=${open}&t=${Date.now()}`
+    );
+    const data = await res.json();
+    if (data.status === 'ok') {
+      updateToggleUI(data.open);
+    } else {
+      alert('Could not update form status. Try again.');
+      toggle.checked = !open; // revert
+      toggle.disabled = false;
+    }
+  } catch(err) {
+    alert('Network error. Try again.');
+    toggle.checked = !open;
+    toggle.disabled = false;
+  }
+  updatingEl.style.display = 'none';
 }
 
 // ── Admin ──
@@ -891,9 +1021,13 @@ async function verifyAdmin(){
 // ── Report ──
 function showReport(){
   document.getElementById('heroSection').style.display='none';
+  document.getElementById('checkingScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('closedScreen').style.display='none';
   document.getElementById('progressWrap').style.display='none';
   document.getElementById('formWrap').style.display='none';
   document.getElementById('reportWrap').classList.add('show');
+  loadFormStatus();
   loadReport();
 }
 function showForm(){
@@ -1142,10 +1276,36 @@ async function downloadPDF(){
 
 initDrag();
 
-// Wait for Google Identity Services to load, then init button
+// ── Check form status on load ──
 window.addEventListener('load', function() {
-  // Small delay to ensure GSI script is fully parsed
-  setTimeout(initGoogleSignIn, 200);
+  // Check if form is open via Apps Script
+  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    // No script connected — show login directly
+    document.getElementById('checkingScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'block';
+    setTimeout(initGoogleSignIn, 200);
+    return;
+  }
+
+  fetch(SCRIPT_URL + '?action=status&t=' + Date.now())
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('checkingScreen').style.display = 'none';
+      if (data.open === false) {
+        // Form is closed — show closed screen
+        document.getElementById('closedScreen').style.display = 'block';
+      } else {
+        // Form is open — show login
+        document.getElementById('loginScreen').style.display = 'block';
+        setTimeout(initGoogleSignIn, 200);
+      }
+    })
+    .catch(() => {
+      // Network error — still show login (fail open)
+      document.getElementById('checkingScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'block';
+      setTimeout(initGoogleSignIn, 200);
+    });
 });
 </script>
 </body>
