@@ -989,37 +989,44 @@ async function submitForm(){
   };
   try{
     if(SCRIPT_URL!=='YOUR_APPS_SCRIPT_URL_HERE'){
-      const controller = new AbortController();
-      const timeoutId = setTimeout(()=>controller.abort(), 15000);
-      let json = null;
+
+      // ── Step 1: Pre-check for duplicate and form status via GET (no CORS issue) ──
       try{
-        const res = await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),signal:controller.signal});
-        clearTimeout(timeoutId);
-        json = await res.json();
-      }catch(fetchErr){
-        clearTimeout(timeoutId);
-        if(fetchErr.name==='AbortError'){
-          // Timed out — data likely saved, proceed to success
-          console.warn('Submit timed out — proceeding anyway');
-        } else {
-          throw fetchErr;
-        }
-      }
-      if(json){
-        if(json.status==='closed'){
+        const checkRes = await fetch(
+          `${SCRIPT_URL}?action=precheck&email=${encodeURIComponent(payload.email)}&prn=${encodeURIComponent(payload.prn)}&t=${Date.now()}`
+        );
+        const checkJson = await checkRes.json();
+        if(checkJson.status==='closed'){
           btn.disabled=false;btn.innerHTML='Submit Pulse ✦';
-          showSubmitWarning('🔒 <strong>The form has been closed.</strong><br>Responses are no longer being accepted. Contact the INVESH team if needed.');
+          showSubmitWarning('🔒 <strong>The form has been closed.</strong><br>Responses are no longer being accepted.');
           return;
         }
-        if(json.status==='duplicate'){
+        if(checkJson.status==='duplicate'){
           btn.disabled=false;btn.innerHTML='Submit Pulse ✦';
           showSubmitWarning('⚠️ <strong>You have already submitted this form.</strong><br>Only one response per student is allowed. Contact the INVESH team to update.');
           return;
         }
-        if(json.status==='error'){
-          btn.disabled=false;btn.innerHTML='Submit Pulse ✦';
-          showSubmitWarning('⚠️ <strong>Submission failed.</strong><br>'+(json.message||'Please try again.'));
-          return;
+      }catch(checkErr){
+        console.warn('Pre-check failed, proceeding with submit:', checkErr);
+      }
+
+      // ── Step 2: Submit via POST with no-cors ──
+      const controller = new AbortController();
+      const timeoutId = setTimeout(()=>controller.abort(), 20000);
+      try{
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+          mode: 'no-cors',
+        });
+        clearTimeout(timeoutId);
+      }catch(fetchErr){
+        clearTimeout(timeoutId);
+        if(fetchErr.name==='AbortError'){
+          console.warn('Submit timed out — data may still be saved');
+        } else {
+          throw fetchErr;
         }
       }
     }
