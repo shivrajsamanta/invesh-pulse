@@ -180,6 +180,27 @@
 .login-err{background:#FFF0F0;border:1.5px solid var(--error);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--error);margin-bottom:16px;display:none}
 .login-err.show{display:block}
 
+/* ── Batch Selection Buttons ── */
+.batch-select-wrap{display:flex;flex-direction:column;gap:14px;margin-bottom:24px}
+.batch-btn{width:100%;padding:16px 20px;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px;text-align:left;position:relative;overflow:hidden}
+.batch-btn-2628{background:var(--navy);color:#fff;border:2px solid var(--navy)}
+.batch-btn-2628:hover{background:#1a2f5e;border-color:#1a2f5e;transform:translateY(-2px);box-shadow:0 6px 20px rgba(13,27,62,0.3)}
+.batch-btn-2527{background:#fff;color:var(--navy);border:2px solid var(--border)}
+.batch-btn-2527:hover{border-color:var(--navy);background:var(--surface);transform:translateY(-2px);box-shadow:0 6px 20px rgba(13,27,62,0.1)}
+.batch-btn-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.batch-btn-2628 .batch-btn-icon{background:rgba(212,168,55,0.2)}
+.batch-btn-2527 .batch-btn-icon{background:rgba(13,27,62,0.06)}
+.batch-btn-text{display:flex;flex-direction:column;gap:2px}
+.batch-btn-label{font-size:15px;font-weight:700;line-height:1}
+.batch-btn-sub{font-size:11px;font-weight:400;opacity:0.7;margin-top:3px}
+.batch-btn-arrow{margin-left:auto;font-size:18px;opacity:0.6}
+/* Back button on login sub-screen */
+.btn-back-login{background:none;border:none;color:var(--muted);font-size:13px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:20px;padding:0;font-weight:500}
+.btn-back-login:hover{color:var(--navy)}
+/* Sub-screens hidden by default */
+#loginSubGoogle{display:none}
+#loginSubManual{display:none}
+
 /* ── Form Closed Screen ── */
 .closed-screen{text-align:center;padding:44px 24px}
 .closed-icon{width:72px;height:72px;background:linear-gradient(135deg,#1A1F36,#2E3558);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:32px;box-shadow:0 4px 18px rgba(13,27,62,0.2)}
@@ -386,20 +407,80 @@
 <!-- ── LOGIN SCREEN — outside formWrap so it shows on load ── -->
 <div id="loginScreen" class="form-wrap" style="max-width:660px;margin:0 auto;padding:0 16px;margin-top:-28px;position:relative;z-index:2;display:none">
   <div class="form-card" style="border-radius:var(--radius)">
-    <div class="login-screen">
+
+    <!-- Step 1: Batch Selection -->
+    <div id="loginStepBatch" class="login-screen">
+      <div class="login-icon">🎓</div>
+      <div class="login-title">Select your Batch</div>
+      <div class="login-sub">Choose your batch to continue. This determines how we verify your identity.</div>
+      <div class="batch-select-wrap">
+        <button class="batch-btn batch-btn-2628" onclick="selectBatch('2628')">
+          <div class="batch-btn-icon">📊</div>
+          <div class="batch-btn-text">
+            <span class="batch-btn-label">Batch 2026–28</span>
+            <span class="batch-btn-sub">OM 26-28 &nbsp;·&nbsp; AOM 26-28 &nbsp;·&nbsp; Sign in with Google</span>
+          </div>
+          <span class="batch-btn-arrow">→</span>
+        </button>
+        <button class="batch-btn batch-btn-2527" onclick="selectBatch('2527')">
+          <div class="batch-btn-icon">📋</div>
+          <div class="batch-btn-text">
+            <span class="batch-btn-label">Batch 2025–27</span>
+            <span class="batch-btn-sub">OM 25-27 &nbsp;·&nbsp; AOM 25-27 &nbsp;·&nbsp; Fill manually</span>
+          </div>
+          <span class="batch-btn-arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2A: Google Sign-In (26-28 batch) -->
+    <div id="loginSubGoogle" class="login-screen">
+      <button class="btn-back-login" onclick="goBackToBatchSelect()">← Back</button>
       <div class="login-icon">🔐</div>
-      <div class="login-title">Sign in to continue</div>
-      <div class="login-sub">Use your SIOM Gmail account (<strong>@siom.in</strong>) to verify your identity before filling the form. This ensures one response per student.</div>
+      <div class="login-title">Sign in with Google</div>
+      <div class="login-sub">Use your <strong>@siom.in</strong> Gmail account to verify your identity. This ensures one response per student.</div>
       <div class="login-err" id="loginErr"></div>
       <div class="google-btn-wrap">
         <div id="googleSignInBtn"></div>
       </div>
-      <div class="login-divider">or</div>
-      <button class="btn-manual" onclick="continueManually()">I'm from 25-27 batch — continue manually</button>
       <div class="login-note">
-        <strong>@siom.in emails only.</strong> Your identity will be auto-filled and locked after sign-in.<br>One response per email is allowed.
+        <strong>@siom.in emails only.</strong> Your name, PRN, and section will be auto-filled after sign-in.
       </div>
     </div>
+
+    <!-- Step 2B: Manual Entry (25-27 batch) -->
+    <div id="loginSubManual" class="login-screen">
+      <button class="btn-back-login" onclick="goBackToBatchSelect()">← Back</button>
+      <div class="login-icon">📋</div>
+      <div class="login-title">Fill your details</div>
+      <div class="login-sub">Since 25-27 batch data is not in our system, please fill your details manually.</div>
+      <div class="field" style="text-align:left;margin-bottom:14px">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px">Full Name <span style="color:var(--error)">*</span></label>
+        <input type="text" id="manualName" placeholder="Your full name" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none">
+      </div>
+      <div class="field" style="text-align:left;margin-bottom:14px">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px">SIOM Email ID <span style="color:var(--error)">*</span></label>
+        <input type="email" id="manualEmail" placeholder="yourname@siom.in" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none">
+      </div>
+      <div class="field" style="text-align:left;margin-bottom:14px">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px">PRN <span style="color:var(--error)">*</span></label>
+        <input type="text" id="manualPRN" placeholder="e.g. 25020741001" maxlength="11" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none">
+      </div>
+      <div class="field" style="text-align:left;margin-bottom:20px">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px">Batch <span style="color:var(--error)">*</span></label>
+        <div style="display:flex;gap:10px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px">
+            <input type="radio" name="manualBatch" value="OM 25-27" style="accent-color:var(--navy)"> OM 25-27
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px">
+            <input type="radio" name="manualBatch" value="AOM 25-27" style="accent-color:var(--navy)"> AOM 25-27
+          </label>
+        </div>
+      </div>
+      <div class="login-err" id="manualErr" style="margin-bottom:12px"></div>
+      <button class="btn-next" style="width:100%;padding:14px" onclick="submitManualLogin()">Continue →</button>
+    </div>
+
   </div>
 </div>
 
@@ -453,29 +534,7 @@
   <input type="hidden" id="hiddenBatch">
   <input type="hidden" id="hiddenSection">
 
-  <!-- Manual fields for 25-27 batch -->
-  <div id="manualFields" style="display:none">
-    <div class="field" id="field-name-manual">
-      <label>Full Name <span class="req">*</span></label>
-      <input type="text" id="nameManual" placeholder="Enter your full name">
-    </div>
-    <div class="field" id="field-email-manual">
-      <label>SIOM Email ID <span class="req">*</span></label>
-      <input type="email" id="emailManual" placeholder="yourname@siom.in">
-      <div class="field-hint">Must be a valid @siom.in email address.</div>
-    </div>
-    <div class="field" id="field-prn-manual">
-      <label>PRN <span style="font-weight:400;color:var(--muted);font-size:11px">(optional)</span></label>
-      <input type="text" id="prnManual" placeholder="e.g. 25020741001" maxlength="11" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-    </div>
-    <div class="field" id="field-batch-manual">
-      <label>Batch <span class="req">*</span></label>
-      <div class="radio-group">
-        <label><input type="radio" name="batch" value="OM 25-27"> OM 25-27</label>
-        <label><input type="radio" name="batch" value="AOM 25-27"> AOM 25-27</label>
-      </div>
-    </div>
-  </div>
+  <!-- Manual fields for 25-27 batch — collected at login screen now, no longer needed here -->
 
   <div class="field" id="field-mobile">
     <label>Mobile Number (WhatsApp) <span class="req">*</span><span class="sublabel">— for event invites &amp; reminders</span></label>
@@ -709,6 +768,50 @@ function updateProgress(sec){
   for(let i=0;i<4;i++){const d=document.getElementById('dot'+i);d.classList.remove('active','done');if(i<sec)d.classList.add('done');else if(i===sec)d.classList.add('active');}
 }
 
+// ── Batch Selection ──
+function selectBatch(batch) {
+  document.getElementById('loginStepBatch').style.display = 'none';
+  if (batch === '2628') {
+    document.getElementById('loginSubGoogle').style.display = 'block';
+  } else {
+    document.getElementById('loginSubManual').style.display = 'block';
+  }
+}
+
+function goBackToBatchSelect() {
+  document.getElementById('loginSubGoogle').style.display = 'none';
+  document.getElementById('loginSubManual').style.display = 'none';
+  document.getElementById('loginStepBatch').style.display = 'block';
+  document.getElementById('loginErr').classList.remove('show');
+}
+
+// ── Manual login submit (25-27 batch) ──
+function submitManualLogin() {
+  const name = document.getElementById('manualName').value.trim();
+  const email = document.getElementById('manualEmail').value.trim();
+  const prn = document.getElementById('manualPRN').value.trim();
+  const batch = document.querySelector('input[name="manualBatch"]:checked')?.value;
+  const errEl = document.getElementById('manualErr');
+  errEl.classList.remove('show');
+
+  if (!name) { errEl.textContent = '⚠ Please enter your full name.'; errEl.classList.add('show'); return; }
+  if (!/^[a-zA-Z0-9._%+-]+@siom\.in$/i.test(email)) { errEl.textContent = '⚠ Please enter a valid @siom.in email.'; errEl.classList.add('show'); return; }
+  if (!prn || prn.length < 10) { errEl.textContent = '⚠ Please enter a valid PRN (at least 10 digits).'; errEl.classList.add('show'); return; }
+  if (!batch) { errEl.textContent = '⚠ Please select your batch.'; errEl.classList.add('show'); return; }
+
+  // Set identity fields
+  isManualFlow = true;
+  loggedInEmail = email;
+  document.getElementById('hiddenName').value = name;
+  document.getElementById('hiddenEmail').value = email;
+  document.getElementById('hiddenPRN').value = prn;
+  document.getElementById('hiddenBatch').value = batch;
+  document.getElementById('hiddenSection').value = 'N/A';
+
+  showIdentityBar(name, email);
+  switchToForm();
+}
+
 // ── Google Sign-In handler ──
 function handleGoogleSignIn(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
@@ -766,14 +869,6 @@ function switchToForm() {
   document.getElementById('sec0').classList.add('active');
   updateProgress(0);
   window.scrollTo({top: document.getElementById('progressWrap').offsetTop - 20, behavior: 'smooth'});
-}
-
-// ── Manual flow for 25-27 batch ──
-function continueManually() {
-  isManualFlow = true;
-  loggedInEmail = '__manual__';
-  document.getElementById('manualFields').style.display = 'block';
-  switchToForm();
 }
 
 // ── Init Google Sign-In button ──
@@ -841,11 +936,7 @@ function validateSection(sec){
   let ok=true,firstErr=null;
   function mark(id,valid){const f=document.getElementById(id);if(f){f.classList.toggle('invalid',!valid);if(!valid&&!firstErr)firstErr=id;if(!valid)ok=false;}}
   if(sec===0){
-    if(isManualFlow){
-      mark('field-name-manual',!!document.getElementById('nameManual').value.trim());
-      mark('field-email-manual',/^[a-zA-Z0-9._%+-]+@siom\.in$/i.test(document.getElementById('emailManual').value.trim()));
-      mark('field-batch-manual',!!document.querySelector('input[name="batch"]:checked'));
-    }
+    // Identity already collected at login — only validate mobile here
     mark('field-mobile',/^[6-9]\d{9}$/.test(document.getElementById('mobileInput').value.trim()));
   }
     if(sec===1){mark('field-priorexp',!!document.querySelector('input[name="priorexp"]:checked'));mark('field-q8',!!document.querySelector('input[name="finarea"]:checked'));mark('field-q9',!!knowledgeVal);if(knowledgeVal)mark('field-q9b',!!document.querySelector('input[name="eventlevel"]:checked'));}
