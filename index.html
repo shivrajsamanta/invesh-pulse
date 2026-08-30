@@ -328,7 +328,7 @@
 </div>
 
 <!-- ── PROGRESS BAR ── -->
-<div class="progress-wrap" id="progressWrap">
+<div class="progress-wrap" id="progressWrap" style="display:none">
   <div class="progress-card">
     <div class="progress-header">
       <span class="progress-label" id="progressLabel">Section 1 of 4 — Your Details</span>
@@ -345,7 +345,7 @@
 </div>
 
 <!-- ── FORM ── -->
-<div class="form-wrap" id="formWrap">
+<div class="form-wrap" id="formWrap" style="display:none">
 <div class="form-card" id="formCard">
 
 <!-- ── LOGIN SCREEN ── -->
@@ -704,9 +704,28 @@ function continueManually() {
 
 // ── Init Google Sign-In button ──
 function initGoogleSignIn() {
-  if (typeof google === 'undefined') { setTimeout(initGoogleSignIn, 300); return; }
-  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleSignIn, auto_select: false });
-  google.accounts.id.renderButton(document.getElementById('googleSignInBtn'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', width: 280 });
+  if (typeof google === 'undefined' || typeof google.accounts === 'undefined') {
+    console.log('GSI not ready, retrying...');
+    setTimeout(initGoogleSignIn, 400);
+    return;
+  }
+  try {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleSignIn,
+      auto_select: false,
+      cancel_on_tap_outside: false,
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('googleSignInBtn'),
+      { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'rectangular', width: 300, logo_alignment: 'left' }
+    );
+    console.log('Google Sign-In initialized successfully');
+  } catch(err) {
+    console.error('GSI init error:', err);
+    document.getElementById('googleSignInBtn').innerHTML =
+      '<button onclick="google.accounts.id.prompt()" style="padding:12px 24px;background:#4285F4;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px"><svg width=\'18\' height=\'18\' viewBox=\'0 0 18 18\'><path d=\'M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z\' fill=\'#4285F4\'/><path d=\'M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z\' fill=\'#34A853\'/><path d=\'M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z\' fill=\'#FBBC05\'/><path d=\'M9 3.576c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.576 9 3.576z\' fill=\'#EA4335\'/></svg>Sign in with Google</button>';
+  }
 }
 
 // ── Helpers ──
@@ -1119,7 +1138,12 @@ async function downloadPDF(){
 }
 
 initDrag();
-updateProgress(0);
+
+// Wait for Google Identity Services to load, then init button
+window.addEventListener('load', function() {
+  // Small delay to ensure GSI script is fully parsed
+  setTimeout(initGoogleSignIn, 200);
+});
 </script>
 </body>
 </html>
