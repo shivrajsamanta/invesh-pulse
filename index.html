@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Batch Pulse Form | INVESH | 26-28</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -155,6 +156,29 @@
 .success-screen p{color:var(--muted);font-size:14px;line-height:1.7}
 .success-name{color:var(--navy);font-weight:700}
 .divider{border:none;border-top:1.5px solid var(--border);margin:20px 0}
+
+/* ── Google Login Screen ── */
+.login-screen{text-align:center;padding:36px 24px}
+.login-icon{width:68px;height:68px;background:linear-gradient(135deg,#0D1B3E,#1a2f5e);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:28px;box-shadow:0 4px 16px rgba(13,27,62,0.25)}
+.login-title{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.login-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:28px;max-width:340px;margin-left:auto;margin-right:auto}
+.google-btn-wrap{display:flex;justify-content:center;margin-bottom:20px}
+.login-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--muted);font-size:12px}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.btn-manual{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .18s}
+.btn-manual:hover{border-color:var(--navy);color:var(--navy)}
+.login-note{font-size:11px;color:var(--muted);margin-top:16px;line-height:1.6}
+.login-note strong{color:var(--navy)}
+/* Logged-in identity bar */
+.identity-bar{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:20px}
+.identity-avatar{width:38px;height:38px;border-radius:50%;background:var(--navy);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.identity-info{flex:1;text-align:left}
+.identity-name{font-size:14px;font-weight:600;color:var(--navy)}
+.identity-email{font-size:11px;color:var(--muted);margin-top:1px}
+.identity-badge{background:#E8FBF3;color:var(--success);font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.5px}
+/* Error state */
+.login-err{background:#FFF0F0;border:1.5px solid var(--error);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--error);margin-bottom:16px;display:none}
+.login-err.show{display:block}
 
 /* ── ADMIN LOGIN ── */
 .admin-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,62,.7);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
@@ -324,56 +348,84 @@
 <div class="form-wrap" id="formWrap">
 <div class="form-card" id="formCard">
 
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen">
+  <div class="login-screen">
+    <div class="login-icon">🔐</div>
+    <div class="login-title">Sign in to continue</div>
+    <div class="login-sub">Use your SIOM Gmail account (<strong>@siom.in</strong>) to verify your identity before filling the form. This ensures one response per student.</div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="google-btn-wrap">
+      <div id="googleSignInBtn"></div>
+    </div>
+    <div class="login-divider">or</div>
+    <button class="btn-manual" onclick="continueManually()">I'm from 25-27 batch — continue manually</button>
+    <div class="login-note">
+      <strong>@siom.in emails only.</strong> Your identity will be auto-filled and locked after sign-in.<br>One response per email is allowed.
+    </div>
+  </div>
+</div>
+
 <!-- SEC 0: DETAILS -->
-<div class="section-block active" id="sec0">
+<div class="section-block" id="sec0">
+  <!-- Identity bar shown after login -->
+  <div class="identity-bar" id="identityBar" style="display:none">
+    <div class="identity-avatar" id="identityAvatar">S</div>
+    <div class="identity-info">
+      <div class="identity-name" id="identityName">—</div>
+      <div class="identity-email" id="identityEmail">—</div>
+    </div>
+    <div class="identity-badge">✓ Verified</div>
+  </div>
   <div class="section-label">Your Details</div>
-  <div class="field" id="field-batch">
-    <label>Batch <span class="req">*</span></label>
-    <div class="radio-group">
-      <label><input type="radio" name="batch" value="OM 26-28" onchange="onBatchChange()"> OM 26-28</label>
-      <label><input type="radio" name="batch" value="AOM 26-28" onchange="onBatchChange()"> AOM 26-28</label>
-      <label><input type="radio" name="batch" value="OM 25-27" onchange="onBatchChange()"> OM 25-27</label>
-      <label><input type="radio" name="batch" value="AOM 25-27" onchange="onBatchChange()"> AOM 25-27</label>
+
+  <!-- Identity bar (shown after Google login) -->
+  <div class="identity-bar" id="identityBar" style="display:none">
+    <div class="identity-avatar" id="identityAvatar">?</div>
+    <div class="identity-info">
+      <div class="identity-name" id="identityName">—</div>
+      <div class="identity-email" id="identityEmail">—</div>
+    </div>
+    <div class="identity-badge">✓ Verified</div>
+  </div>
+
+  <!-- Hidden identity fields populated from Google login / DB lookup -->
+  <input type="hidden" id="hiddenName">
+  <input type="hidden" id="hiddenEmail">
+  <input type="hidden" id="hiddenPRN">
+  <input type="hidden" id="hiddenBatch">
+  <input type="hidden" id="hiddenSection">
+
+  <!-- Manual fields for 25-27 batch -->
+  <div id="manualFields" style="display:none">
+    <div class="field" id="field-name-manual">
+      <label>Full Name <span class="req">*</span></label>
+      <input type="text" id="nameManual" placeholder="Enter your full name">
+    </div>
+    <div class="field" id="field-email-manual">
+      <label>SIOM Email ID <span class="req">*</span></label>
+      <input type="email" id="emailManual" placeholder="yourname@siom.in">
+      <div class="field-hint">Must be a valid @siom.in email address.</div>
+    </div>
+    <div class="field" id="field-prn-manual">
+      <label>PRN <span style="font-weight:400;color:var(--muted);font-size:11px">(optional)</span></label>
+      <input type="text" id="prnManual" placeholder="e.g. 25020741001" maxlength="11" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    </div>
+    <div class="field" id="field-batch-manual">
+      <label>Batch <span class="req">*</span></label>
+      <div class="radio-group">
+        <label><input type="radio" name="batch" value="OM 25-27"> OM 25-27</label>
+        <label><input type="radio" name="batch" value="AOM 25-27"> AOM 25-27</label>
+      </div>
     </div>
   </div>
-  <div class="field" id="field-prn" style="display:none">
-    <label>Full PRN <span class="req">*</span></label>
-    <div class="prn-row">
-      <input type="text" id="prnInput" placeholder="e.g. 26020741062" maxlength="11" autocomplete="off" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-      <button class="prn-btn" type="button" onclick="lookupPRN()">Look up</button>
-    </div>
-    <div class="prn-status" id="prnStatus"></div>
-    <div class="field-hint">Enter your 11-digit PRN — Name &amp; Email fill automatically.</div>
-  </div>
-  <div class="field" id="field-name" style="display:none">
-    <label>Full Name <span class="req">*</span></label>
-    <input type="text" id="nameInput" placeholder="Auto-filled from PRN" readonly>
-    <div class="auto-tag" id="nameTag" style="display:none"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="6" fill="#1A9E6B"/><path d="M3.5 6l1.8 1.8L8.5 4.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Auto-filled</div>
-  </div>
-  <div class="field" id="field-prn-manual" style="display:none">
-    <label>PRN</label>
-    <input type="text" id="prnManual" placeholder="e.g. 25020741001" maxlength="11" autocomplete="off" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-  </div>
-  <div class="field" id="field-name-manual" style="display:none">
-    <label>Full Name <span class="req">*</span></label>
-    <input type="text" id="nameManual" placeholder="Enter your full name">
-  </div>
-  <div class="field" id="field-email" style="display:none">
-    <label>SIOM Email ID <span class="req">*</span></label>
-    <input type="email" id="emailInput" placeholder="Auto-filled from PRN" readonly>
-    <div class="auto-tag" id="emailTag" style="display:none"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="6" fill="#1A9E6B"/><path d="M3.5 6l1.8 1.8L8.5 4.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Auto-filled</div>
-  </div>
-  <div class="field" id="field-email-manual" style="display:none">
-    <label>SIOM Email ID <span class="req">*</span></label>
-    <input type="email" id="emailManual" placeholder="yourname@siom.in">
-    <div class="field-hint">Must be a valid @siom.in email address.</div>
-  </div>
-  <div class="field" id="field-mobile" style="display:none">
+
+  <div class="field" id="field-mobile">
     <label>Mobile Number (WhatsApp) <span class="req">*</span><span class="sublabel">— for event invites &amp; reminders</span></label>
     <input type="tel" id="mobileInput" placeholder="10-digit number" maxlength="10" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
     <div class="field-hint">Valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9).</div>
   </div>
-  <div id="sec0-nav" style="display:none"><button class="btn-next" onclick="goNext(0)">Next →</button></div>
+  <div><button class="btn-next" onclick="goNext(0)">Next →</button></div>
 </div>
 
 <!-- SEC 1: FINANCE BACKGROUND -->
@@ -560,15 +612,19 @@
 // CONFIG — paste your Apps Script URL here after setup
 // ══════════════════════════════════════════
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyG9P5H66b7WxIRqWOecxlAT1Opdl9fkBgG1FfI-1-aBkFXY70qrVfQqa2Nn0XudDQWYw/exec';
-const SECRET_TOKEN = 'invesh-pulse-2026-secure-key'; // must match Apps Script's SECRET_TOKEN
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1cm6To46dcYkpUypYr_wINfTCGh5e8dMW23gjWzUB7Pc/edit?usp=sharing'; // paste your Google Sheet link here
+const SECRET_TOKEN = 'invesh-pulse-2026-secure-key';
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1cm6To46dcYkpUypYr_wINfTCGh5e8dMW23gjWzUB7Pc/edit?usp=sharing';
+const GOOGLE_CLIENT_ID = '146230927111-5hvao7qmitf41htrjh52dshiktij6it6.apps.googleusercontent.com';
 const TOTAL_BATCH = 156;
-let adminKey = ''; // set only after successful server-side verification
+let adminKey = '';
+let loggedInEmail = '';   // set after Google Sign-In
+let loggedInUser = null;  // full DB record after login
 
 const DB = {"26020741001":{"name":"AAKASH PRITAM","email":"aakash.pritam@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741002":{"name":"ANCHAN HARSH SUDHAKAR","email":"harsh.anchan@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741003":{"name":"ANIRUDH RAMESH","email":"anirudh.ramesh@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741004":{"name":"ANSHUL KADWE","email":"anshul.kadwe@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741005":{"name":"ARASTU SHRIVASTAVA","email":"arastu.shrivastava@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741006":{"name":"ARKODEEP HALDER","email":"arkodeep.halder@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741007":{"name":"ARNAB DAS","email":"arnab.das@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741008":{"name":"ARYAMAN TRIPATHY","email":"aryaman.tripathy@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741009":{"name":"BAGUL ROHAN RAVINDRA","email":"rohan.bagul@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741010":{"name":"BARATH SANKARRAJ R","email":"sankarraj.barath@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741011":{"name":"BHALERAO VAIDEHI RAMAKANT","email":"vaidehi.bhalerao@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741012":{"name":"BHANUSHALI OMKAR AJIT","email":"omkar.bhanushali@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741013":{"name":"CHANDHINI J B","email":"chandhini.b@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741014":{"name":"CHINMAY KADAM","email":"chinmay.kadam@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741015":{"name":"DAVE PARTH HITESH KUMAR","email":"parth.dave@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741016":{"name":"DNYANADA DEEPAK SHAHASANE","email":"dnyanada.shahasane@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741017":{"name":"DOOLAM N G V R TEJA PAVAN KUMAR","email":"n.doolam@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741018":{"name":"GARGEE GAJANAN MARDIKAR","email":"gargee.mardikar@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741019":{"name":"GHANSHYAM SHRIKANT KARIYA","email":"ghanshyam.kariya@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741020":{"name":"GOURAV SHARMA","email":"gourav.sharma@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741021":{"name":"HARSHUL","email":"harshul.kumar@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741022":{"name":"HEMANTH REDDY GUNTAKA","email":"hemanth.guntaka@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741023":{"name":"HRISHIKESH GHOSH","email":"hrishikesh.ghosh@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741024":{"name":"ANURAG SAMAL","email":"anurag.samal@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741025":{"name":"ISHITA GOYAL","email":"ishita.goyal@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741026":{"name":"KHONDE KAUSTUBH KAILASH","email":"kaustubh.khonde@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741027":{"name":"KOTHEKAR RAGHVENDRA RAMCHANDRA","email":"raghvendra.kothekar@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741028":{"name":"LAXMINARAYAN GAJENDRA BISARE","email":"laxminarayan.bisare@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741029":{"name":"MANE SHUBHAM SHANKAR","email":"shubham.mane@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741030":{"name":"MANISHA PAUL","email":"manisha.paul@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741031":{"name":"MATALIA VANSH TEJAS","email":"vansh.matalia@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741032":{"name":"MILTON JOSE","email":"milton.jose@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741033":{"name":"MOHIT SAHARE","email":"mohit.sahare@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741034":{"name":"NIKAM SUSHANT BAPU","email":"sushant.nikam@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741035":{"name":"PARAMA GANGULY","email":"parama.ganguly@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741036":{"name":"PARTH SARTHI","email":"parth.sarthi@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741037":{"name":"PARTH SHARMA","email":"parth.sharma@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741038":{"name":"PATEL ROHAN PARESHKUMAR","email":"rohan.patel@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741039":{"name":"PONNAPALLI SAI KARTHIK","email":"sai.ponnapalli@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741040":{"name":"POOLA ABHISHEK","email":"poola.abhishek@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741041":{"name":"POREDDY VENKATESHWAR REDDY","email":"poreddy.venkateshwar@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741042":{"name":"PRAKHAR SINGH","email":"prakhar.singh@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741043":{"name":"PRASAD RAJENDRA KULKARNI","email":"prasad.kulkarni@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741044":{"name":"PRATIK GHOSH","email":"pratik.ghosh@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741045":{"name":"PRITHWISH DASTIDAR","email":"prithwish.dastidar@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741046":{"name":"PUVVALA SAI PRIYANKA","email":"sai.puvvala@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741047":{"name":"KULKARNI ROHAN VIVEK","email":"rohan.kulkarni@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741048":{"name":"RAJDEEP DAS","email":"rajdeep.das@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741049":{"name":"RATHOD RAJ PANKAJ","email":"raj.rathod@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741050":{"name":"RAVULA SAI KIRAN REDDY","email":"sai.ravula@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741051":{"name":"RIYA LALIT JAWARKAR","email":"riya.jawarkar@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741052":{"name":"ROHAN ASHOK THORAT","email":"rohan.thorat@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741053":{"name":"SAIKAT CHANDRA","email":"saikat.chandra@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741054":{"name":"SAKSHAM ASDHIR","email":"saksham.asdhir@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741055":{"name":"SARTHAK KUMAR","email":"sarthak.kumar@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741056":{"name":"SAYAN MANDAL","email":"sayan.mandal@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741057":{"name":"SHAH JAYNESH DAKSHESH","email":"jaynesh.shah@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741058":{"name":"SHELKE ATHARVA SANJAY","email":"atharva.shelke@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741059":{"name":"SHINDE PALASH MAHESH","email":"palash.shinde@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741060":{"name":"SHIVOM PATHAK","email":"shivom.pathak@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741061":{"name":"SHIVPURI ARYAMAN RAHUL","email":"aryaman.shivpuri@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741062":{"name":"SHIVRAJ SAMANTA","email":"shivraj.samanta@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741063":{"name":"ADKINE SUKANYA HEMRAJ","email":"sukanya.adkine@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741064":{"name":"SIDDHARTH MISHRA","email":"siddharth.mishra@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741065":{"name":"SIMANT MISHRA","email":"simant.mishra@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741066":{"name":"SOUMI BHATTACHARJEE","email":"soumi.bhattacharjee@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741067":{"name":"SOUMIK CHAKRABORTY","email":"soumik.chakraborty@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741068":{"name":"SOUMYASREE DEY","email":"soumyasree.dey@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741069":{"name":"SUGANDH MATCHA","email":"sugandh.matcha@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741070":{"name":"SUPRATIK SANTRA","email":"supratik.santra@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741071":{"name":"SUSHANT SURESH BHUSE","email":"sushant.bhuse@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741072":{"name":"SUSMEETH PS","email":"susmeeth.ps@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741073":{"name":"VAISHNAVI R","email":"vaishnavi.r@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741074":{"name":"VALSANGKAR MOHIT SANJAY","email":"mohit.valsangkar@siom.in","section":"Sec A","batch":"OM 26-28"},"26020741075":{"name":"VANKAR RITESHBHAI RAMANBHAI","email":"riteshbhai.vankar@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741076":{"name":"VATSAL P SHAH","email":"vatsal.shah@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741077":{"name":"VYSNAV VIKRAM S","email":"vikram.vysnav@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741078":{"name":"YASH VIJAY DAHAKE","email":"yash.dahake@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741079":{"name":"ABHIGYAN DUTTA","email":"abhigyan.dutta@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741080":{"name":"ADARSH KUMAR JHA","email":"adarsh.jha@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741081":{"name":"AMIT YASH MISHRA","email":"amit.mishra@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741082":{"name":"ANANMAY BHATT","email":"ananmay.bhatt@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741083":{"name":"YASHAS R","email":"yashas.r@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741084":{"name":"ANIK MAITI","email":"anik.maiti@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741085":{"name":"ANURANJAN JHA","email":"anuranjan.jha@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741086":{"name":"APARUP SEN","email":"aparup.sen@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741087":{"name":"YASH SANJAY JETHWA","email":"yash.jethwa@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741088":{"name":"AVASARMOL SHREYAS SAHADEO","email":"shreyas.avasarmol@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741089":{"name":"BARGE KAUSTUBH RAJKUMAR","email":"kaustubh.barge@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741090":{"name":"BHAGYESH MAGANLAL SANPA","email":"bhagyesh.sanpa@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741091":{"name":"BHOSALE ONKAR VITTHAL","email":"onkar.bhosale@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741092":{"name":"BIST VISHWAS GOPAL SINGH","email":"vishwas.bist@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741093":{"name":"CH SRI CHARITHA","email":"charitha.chirumamilla@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741094":{"name":"CHADALAWADA SURYATEJA PULLAYYA","email":"suryateja.chadalawada@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741095":{"name":"CHARBHAI SAGAR SADANAND","email":"sagar.charbhai@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741096":{"name":"DALVI HRISHIKESH RAJENDRA","email":"hrishikesh.dalvi@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741097":{"name":"DEEPAK SHRIVASTAVA","email":"deepak.shrivastava@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741098":{"name":"FERNANDES ALDEN JOSEPH","email":"alden.fernandes@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741099":{"name":"GEETH SAGAR NETALA","email":"geeth.netala@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741100":{"name":"VISHAL NAYYAR","email":"vishal.nayyar@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741101":{"name":"GUDIVADA VENKATA SRI PAVAN KUMAR","email":"venkata.gudivada@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741102":{"name":"GUJARAN KARAN MUKESH","email":"karan.gujaran@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741103":{"name":"HARDIK BHARDWAJ","email":"hardik.bhardwaj@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741104":{"name":"HARISH KUMAR M","email":"harish.kumar@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741105":{"name":"JADHAV SHRINIVAS GOVARDHAN","email":"shrinivas.jadhav@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741106":{"name":"KALHAN KOUL","email":"kalhan.koul@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741107":{"name":"KHEMNAR GANESH BHAUSAHEB","email":"ganesh.khemnar@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741108":{"name":"KHUSHI MAHOR","email":"khushi.mahor@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741109":{"name":"KSHITIJ JHA","email":"kshitij.jha@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741110":{"name":"KULKARNI VAISHNAVI MAHESH","email":"vaishnavi.kulkarni@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741111":{"name":"KUSHAGRA CHAUHAN","email":"kushagra.chauhan@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741112":{"name":"MALAY SAHU","email":"malay.sahu@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741113":{"name":"VISANKH GAUTAM","email":"visankh.gautam@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741114":{"name":"MUDALIYAR PRANATHY MURUGAN","email":"pranathy.mudaliyar@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741115":{"name":"NAKETTINAWAR VINAYAK BASAVARAJ","email":"vinayak.nakettinawar@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741116":{"name":"NIPUN","email":"nipun.bindoria@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741117":{"name":"OM NITIN PATIL","email":"om.patil@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741118":{"name":"PALASH VERMA","email":"palash.verma@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741119":{"name":"PALLAVI CHOWDHURY","email":"pallavi.chowdhury@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741120":{"name":"PALTHYA RAMESH","email":"ramesh.palthya@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741121":{"name":"PAMU SURAJ","email":"pamu.suraj@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741122":{"name":"PATEL ATHARVA RAVIKANT","email":"atharva.patel@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741123":{"name":"PATHARE DEVDATTA DNYANESHWAR","email":"devdatta.pathare@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741124":{"name":"PATIL DEVENDRA NIVRUTTI","email":"devendra.patil@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741125":{"name":"PRANJALI GEDAM","email":"pranjali.gedam@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741126":{"name":"PRATHAMESH PRASHANT KADAM","email":"prathamesh.kadam@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741127":{"name":"VARSHA V","email":"varsha.v@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741128":{"name":"RAHULKUMAR RAJANBHAI DEVTA","email":"rahulkumar.devta@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741129":{"name":"RUPAK PAL","email":"rupak.pal@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741130":{"name":"SAKSHI MIHANI","email":"sakshi.mihani@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741131":{"name":"SALVI LAUKIK SARANG","email":"laukik.salvi@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741132":{"name":"SAMANT MEET PRASAD","email":"meet.samant@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741133":{"name":"SAMEER JAGESHWAR MOREY","email":"sameer.morey@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741134":{"name":"SANKARAN T P","email":"sankaran.t@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741135":{"name":"VALAY KANT SAO","email":"valay.sao@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741136":{"name":"SAUHARD JOSHI","email":"sauhard.joshi@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741137":{"name":"SHAH HARSH PRASENBHAI","email":"harsh.shah@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741138":{"name":"SHAILPIK SARKAR","email":"shailpik.sarkar@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741139":{"name":"SHALIN BHAT","email":"shalin.bhat@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741140":{"name":"SHUBH GANDHI","email":"shubh.gandhi@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741141":{"name":"SHUBHAM DHAR","email":"shubham.dhar@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741142":{"name":"VAISHNAVI GARG","email":"vaishnavi.garg@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741143":{"name":"SOHAM RAGHUNATH INGALE","email":"soham.ingale@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741144":{"name":"TANU PRIYAMVADA","email":"tanu.priyamvada@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741145":{"name":"SRISHTI SHARMA","email":"srishti.sharma@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741146":{"name":"SUBHOBROTO BISWAS","email":"subhobroto.biswas@siom.in","section":"Sec B","batch":"OM 26-28"},"26020741147":{"name":"TAMMINENI SRUTHI","email":"tammineni.sruthi@siom.in","section":"Sec B","batch":"OM 26-28"},"26020742001":{"name":"ADITYA UTTAM SHINDE","email":"aditya.shinde@siom.in","section":"AOM","batch":"AOM 26-28"},"26020742002":{"name":"ASTHA BANSAL","email":"astha.bansal@siom.in","section":"AOM","batch":"AOM 26-28"},"26020742003":{"name":"AVNISH BIBHISHAN ARGADE","email":"avnish.argade@siom.in","section":"AOM","batch":"AOM 26-28"},"26020742004":{"name":"SHANTANU SRIVASTAVA","email":"shantanu.srivastava@siom.in","section":"AOM","batch":"AOM 26-28"},"26020742005":{"name":"SHREYA BANGER","email":"shreya.banger@siom.in","section":"AOM","batch":"AOM 26-28"},"26020742006":{"name":"PRIYABRATA ROY","email":"Priyabrata.roy@siom.in","section":"AOM","batch":"AOM 26-28"},"26020742007":{"name":"RAVI NARAYAN","email":"ravi.narayan@siom.in","section":"AOM","batch":"AOM 26-28"},"26020742008":{"name":"ROSHNI JAISWAL","email":"roshni.jaiswal@siom.in","section":"AOM","batch":"AOM 26-28"},"26020742009":{"name":"SAKSHI MISHRA","email":"sakshi.mishra@siom.in","section":"AOM","batch":"AOM 26-28"}};
 
 // ── State ──
 let currentSection=0, knowledgeVal=0, allResponses=[], chartInstances=[];
+let isManualFlow=false;
 const sectionNames=['Your Details','Finance Background','Event Preferences','Expectations'];
 
 // ── Progress ──
@@ -580,35 +636,78 @@ function updateProgress(sec){
   for(let i=0;i<4;i++){const d=document.getElementById('dot'+i);d.classList.remove('active','done');if(i<sec)d.classList.add('done');else if(i===sec)d.classList.add('active');}
 }
 
-// ── Batch ──
-function onBatchChange(){
-  const batch=document.querySelector('input[name="batch"]:checked')?.value;
-  const is2628=batch==='OM 26-28'||batch==='AOM 26-28';
-  document.getElementById('field-prn').style.display=is2628?'block':'none';
-  document.getElementById('field-name').style.display=is2628?'block':'none';
-  document.getElementById('field-email').style.display=is2628?'block':'none';
-  document.getElementById('field-prn-manual').style.display=is2628?'none':'block';
-  document.getElementById('field-name-manual').style.display=is2628?'none':'block';
-  document.getElementById('field-email-manual').style.display=is2628?'none':'block';
-  document.getElementById('field-mobile').style.display='block';
-  document.getElementById('sec0-nav').style.display='block';
-  if(!is2628)clearAutoFill();
+// ── Google Sign-In handler ──
+function handleGoogleSignIn(response) {
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  const email = payload.email;
+  const googleName = payload.name;
+  const err = document.getElementById('loginErr');
+  err.classList.remove('show');
+
+  // Enforce @siom.in only
+  if (!email.toLowerCase().endsWith('@siom.in')) {
+    err.textContent = '⚠ Only @siom.in Gmail accounts are allowed. Please sign in with your SIOM email.';
+    err.classList.add('show');
+    return;
+  }
+
+  // Look up in DB by email
+  const prnKey = Object.keys(DB).find(k => DB[k].email.toLowerCase() === email.toLowerCase());
+  const rec = prnKey ? DB[prnKey] : null;
+
+  loggedInEmail = email;
+  if (rec) {
+    loggedInUser = rec;
+    document.getElementById('hiddenName').value = rec.name;
+    document.getElementById('hiddenEmail').value = rec.email;
+    document.getElementById('hiddenPRN').value = prnKey;
+    document.getElementById('hiddenBatch').value = rec.batch;
+    document.getElementById('hiddenSection').value = rec.section;
+    showIdentityBar(rec.name, rec.email);
+  } else {
+    // @siom.in but not in 26-28 DB — could be 25-27 or staff
+    document.getElementById('hiddenEmail').value = email;
+    document.getElementById('hiddenName').value = googleName || '';
+    document.getElementById('hiddenBatch').value = 'Unknown';
+    document.getElementById('hiddenSection').value = 'N/A';
+    document.getElementById('hiddenPRN').value = 'N/A';
+    document.getElementById('manualFields').style.display = 'block';
+    showIdentityBar(googleName || email, email);
+  }
+
+  switchToForm();
 }
 
-// ── PRN ──
-function lookupPRN(){
-  const prn=document.getElementById('prnInput').value.trim();
-  const status=document.getElementById('prnStatus');
-  if(prn.length!==11){status.textContent='PRN must be 11 digits.';status.className='prn-status err';return;}
-  const rec=DB[prn];
-  if(!rec){status.textContent='PRN not found — please check and try again.';status.className='prn-status err';clearAutoFill();return;}
-  setAutoField('nameInput','nameTag',rec.name);
-  setAutoField('emailInput','emailTag',rec.email);
-  status.textContent='✓ Found — '+rec.name;status.className='prn-status ok';
+function showIdentityBar(name, email) {
+  const bar = document.getElementById('identityBar');
+  bar.style.display = 'flex';
+  document.getElementById('identityAvatar').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('identityName').textContent = name;
+  document.getElementById('identityEmail').textContent = email;
 }
-function setAutoField(iid,tid,val){const i=document.getElementById(iid);i.value=val;i.classList.add('auto-filled');document.getElementById(tid).style.display='inline-flex';}
-function clearAutoFill(){['nameInput','emailInput'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('auto-filled');}});['nameTag','emailTag'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('prnStatus').textContent='';}
-document.getElementById('prnInput').addEventListener('input',function(){if(this.value.trim().length===11)lookupPRN();});
+
+function switchToForm() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('formWrap').style.display = 'block';
+  document.getElementById('sec0').classList.add('active');
+  updateProgress(0);
+}
+
+// ── Manual flow for 25-27 batch ──
+function continueManually() {
+  isManualFlow = true;
+  loggedInEmail = '__manual__';
+  document.getElementById('manualFields').style.display = 'block';
+  switchToForm();
+}
+
+// ── Init Google Sign-In button ──
+function initGoogleSignIn() {
+  if (typeof google === 'undefined') { setTimeout(initGoogleSignIn, 300); return; }
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleSignIn, auto_select: false });
+  google.accounts.id.renderButton(document.getElementById('googleSignInBtn'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', width: 280 });
+}
 
 // ── Helpers ──
 function toggleQ7(show){document.getElementById('field-expdetail').style.display=show?'block':'none';if(!show)document.getElementById('expDetail').value='';}
@@ -649,14 +748,14 @@ function validateSection(sec){
   let ok=true,firstErr=null;
   function mark(id,valid){const f=document.getElementById(id);if(f){f.classList.toggle('invalid',!valid);if(!valid&&!firstErr)firstErr=id;if(!valid)ok=false;}}
   if(sec===0){
-    const batch=document.querySelector('input[name="batch"]:checked')?.value;
-    mark('field-batch',!!batch);
-    const is2628=batch==='OM 26-28'||batch==='AOM 26-28';
-    if(is2628){mark('field-prn',document.getElementById('prnInput').value.trim().length===11&&!!DB[document.getElementById('prnInput').value.trim()]);}
-    else{mark('field-name-manual',!!document.getElementById('nameManual').value.trim());mark('field-email-manual',/^[a-zA-Z0-9._%+-]+@siom\.in$/i.test(document.getElementById('emailManual').value.trim()));}
+    if(isManualFlow){
+      mark('field-name-manual',!!document.getElementById('nameManual').value.trim());
+      mark('field-email-manual',/^[a-zA-Z0-9._%+-]+@siom\.in$/i.test(document.getElementById('emailManual').value.trim()));
+      mark('field-batch-manual',!!document.querySelector('input[name="batch"]:checked'));
+    }
     mark('field-mobile',/^[6-9]\d{9}$/.test(document.getElementById('mobileInput').value.trim()));
   }
-  if(sec===1){mark('field-priorexp',!!document.querySelector('input[name="priorexp"]:checked'));mark('field-q8',!!document.querySelector('input[name="finarea"]:checked'));mark('field-q9',!!knowledgeVal);if(knowledgeVal)mark('field-q9b',!!document.querySelector('input[name="eventlevel"]:checked'));}
+    if(sec===1){mark('field-priorexp',!!document.querySelector('input[name="priorexp"]:checked'));mark('field-q8',!!document.querySelector('input[name="finarea"]:checked'));mark('field-q9',!!knowledgeVal);if(knowledgeVal)mark('field-q9b',!!document.querySelector('input[name="eventlevel"]:checked'));}
   if(sec===2){mark('field-q10',!!document.querySelector('input[name="eventtype"]:checked'));mark('field-q11',!!document.querySelector('input[name="platform"]:checked'));mark('field-newstime',!!document.querySelector('input[name="newstime"]:checked'));}
   if(firstErr)document.getElementById(firstErr).scrollIntoView({behavior:'smooth',block:'center'});
   return ok;
@@ -680,18 +779,17 @@ async function submitForm(){
 
   const btn=document.getElementById('submitBtn');
   btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span>Submitting…';
-  const batch=document.querySelector('input[name="batch"]:checked')?.value;
-  const is2628=batch==='OM 26-28'||batch==='AOM 26-28';
-  const prn=document.getElementById('prnInput').value.trim();
-  const rec=is2628?DB[prn]:null;
+  // Build payload from hidden identity fields (set by Google login or manual entry)
+  const name = isManualFlow ? document.getElementById('nameManual').value.trim() : document.getElementById('hiddenName').value;
+  const email = isManualFlow ? document.getElementById('emailManual').value.trim() : document.getElementById('hiddenEmail').value;
+  const prn = isManualFlow ? (document.getElementById('prnManual').value.trim()||'N/A') : document.getElementById('hiddenPRN').value;
+  const batch = isManualFlow ? (document.querySelector('input[name="batch"]:checked')?.value||'Unknown') : document.getElementById('hiddenBatch').value;
+  const section = isManualFlow ? 'N/A' : document.getElementById('hiddenSection').value;
   const fa=[...document.querySelectorAll('input[name="finarea"]:checked')].map(e=>e.value==='Other'?'Other: '+document.getElementById('otherFinArea').value:e.value);
   const et=[...document.querySelectorAll('input[name="eventtype"]:checked')].map(e=>e.value);
   const pl=[...document.querySelectorAll('input[name="platform"]:checked')].map(e=>e.value==='Other'?'Other: '+document.getElementById('otherPlatform').value:e.value);
   const payload={
-    batch,prn:is2628?prn:(document.getElementById('prnManual').value.trim()||'N/A'),
-    name:is2628?rec.name:document.getElementById('nameManual').value.trim(),
-    email:is2628?rec.email:document.getElementById('emailManual').value.trim(),
-    section:is2628?rec.section:'N/A',mobile:document.getElementById('mobileInput').value.trim(),
+    batch, prn, name, email, section, mobile:document.getElementById('mobileInput').value.trim(),
     priorExp:document.querySelector('input[name="priorexp"]:checked')?.value,
     expDetail:document.getElementById('expDetail').value.trim(),
     finAreas:fa,knowledgeLevel:knowledgeVal,
@@ -728,8 +826,8 @@ async function submitForm(){
     showSubmitWarning('⚠️ <strong>Could not reach the server.</strong><br>Check your internet connection and try again.');
     return;
   }
-  const name=payload.name.split(' ')[0];
-  document.getElementById('successName').textContent=name.charAt(0)+name.slice(1).toLowerCase();
+  const firstName=payload.name.split(' ')[0]||'there';
+  document.getElementById('successName').textContent=firstName.charAt(0).toUpperCase()+firstName.slice(1).toLowerCase();
   document.getElementById('formCard').style.display='none';
   document.getElementById('progressFill').style.width='100%';
   document.getElementById('progressLabel').textContent='Submitted ✓';
