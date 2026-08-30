@@ -328,6 +328,26 @@
 </div>
 
 <!-- ── PROGRESS BAR ── -->
+<!-- ── LOGIN SCREEN — outside formWrap so it shows on load ── -->
+<div id="loginScreen" class="form-wrap" style="max-width:660px;margin:0 auto;padding:0 16px;margin-top:-28px;position:relative;z-index:2">
+  <div class="form-card" style="border-radius:var(--radius)">
+    <div class="login-screen">
+      <div class="login-icon">🔐</div>
+      <div class="login-title">Sign in to continue</div>
+      <div class="login-sub">Use your SIOM Gmail account (<strong>@siom.in</strong>) to verify your identity before filling the form. This ensures one response per student.</div>
+      <div class="login-err" id="loginErr"></div>
+      <div class="google-btn-wrap">
+        <div id="googleSignInBtn"></div>
+      </div>
+      <div class="login-divider">or</div>
+      <button class="btn-manual" onclick="continueManually()">I'm from 25-27 batch — continue manually</button>
+      <div class="login-note">
+        <strong>@siom.in emails only.</strong> Your identity will be auto-filled and locked after sign-in.<br>One response per email is allowed.
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="progress-wrap" id="progressWrap" style="display:none">
   <div class="progress-card">
     <div class="progress-header">
@@ -347,24 +367,6 @@
 <!-- ── FORM ── -->
 <div class="form-wrap" id="formWrap" style="display:none">
 <div class="form-card" id="formCard">
-
-<!-- ── LOGIN SCREEN ── -->
-<div id="loginScreen">
-  <div class="login-screen">
-    <div class="login-icon">🔐</div>
-    <div class="login-title">Sign in to continue</div>
-    <div class="login-sub">Use your SIOM Gmail account (<strong>@siom.in</strong>) to verify your identity before filling the form. This ensures one response per student.</div>
-    <div class="login-err" id="loginErr"></div>
-    <div class="google-btn-wrap">
-      <div id="googleSignInBtn"></div>
-    </div>
-    <div class="login-divider">or</div>
-    <button class="btn-manual" onclick="continueManually()">I'm from 25-27 batch — continue manually</button>
-    <div class="login-note">
-      <strong>@siom.in emails only.</strong> Your identity will be auto-filled and locked after sign-in.<br>One response per email is allowed.
-    </div>
-  </div>
-</div>
 
 <!-- SEC 0: DETAILS -->
 <div class="section-block" id="sec0">
@@ -692,6 +694,7 @@ function switchToForm() {
   document.getElementById('formWrap').style.display = 'block';
   document.getElementById('sec0').classList.add('active');
   updateProgress(0);
+  window.scrollTo({top: document.getElementById('progressWrap').offsetTop - 20, behavior: 'smooth'});
 }
 
 // ── Manual flow for 25-27 batch ──
