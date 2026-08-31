@@ -537,9 +537,8 @@
   <!-- Manual fields for 25-27 batch — collected at login screen now, no longer needed here -->
 
   <div class="field" id="field-mobile">
-    <label>Mobile Number (WhatsApp) <span class="req">*</span><span class="sublabel">— for event invites &amp; reminders</span></label>
+    <label>Mobile Number (WhatsApp)</label>
     <input type="tel" id="mobileInput" placeholder="10-digit number" maxlength="10" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-    <div class="field-hint">Valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9).</div>
   </div>
   <div><button class="btn-next" onclick="goNext(0)">Next →</button></div>
 </div>
@@ -936,8 +935,14 @@ function validateSection(sec){
   let ok=true,firstErr=null;
   function mark(id,valid){const f=document.getElementById(id);if(f){f.classList.toggle('invalid',!valid);if(!valid&&!firstErr)firstErr=id;if(!valid)ok=false;}}
   if(sec===0){
-    // Identity already collected at login — only validate mobile here
-    mark('field-mobile',/^[6-9]\d{9}$/.test(document.getElementById('mobileInput').value.trim()));
+    // Mobile is optional — only validate format if they filled it
+    const mob = document.getElementById('mobileInput').value.trim();
+    if(mob && !/^[6-9]\d{9}$/.test(mob)){
+      mark('field-mobile', false);
+    } else {
+      const f = document.getElementById('field-mobile');
+      if(f) f.classList.remove('invalid');
+    }
   }
     if(sec===1){mark('field-priorexp',!!document.querySelector('input[name="priorexp"]:checked'));mark('field-q8',!!document.querySelector('input[name="finarea"]:checked'));mark('field-q9',!!knowledgeVal);if(knowledgeVal)mark('field-q9b',!!document.querySelector('input[name="eventlevel"]:checked'));}
   if(sec===2){mark('field-q10',!!document.querySelector('input[name="eventtype"]:checked'));mark('field-q11',!!document.querySelector('input[name="platform"]:checked'));mark('field-newstime',!!document.querySelector('input[name="newstime"]:checked'));}
