@@ -1201,7 +1201,10 @@ function pct(n,total){return total?Math.round(n/total*100):0;}
 function renderReport(data){
   const n=data.length;
   const rate=pct(n,TOTAL_BATCH);
-  document.getElementById('reportSubtitle').textContent=`${n} responses · ${rate}% response rate · Last refreshed ${new Date().toLocaleTimeString()}`;
+  const n2628 = allResponses.filter(r=>r['Batch']&&r['Batch'].includes('26-28')).length;
+  const n2527 = allResponses.filter(r=>r['Batch']&&r['Batch'].includes('25-27')).length;
+  const rate2628 = Math.round(n2628/Object.keys(DB).length*100);
+  document.getElementById('reportSubtitle').textContent = `${n} total responses · ${n2628} from 26-28 (${rate2628}% of ${Object.keys(DB).length}) · ${n2527} from 25-27 · Last refreshed ${new Date().toLocaleTimeString()}`;
 
   // Compute stats
   const finAreas=['Stock Market and Trading','Personal Finance and Wealth Management','Corporate Finance and Valuation','Banking and Financial Services','FinTech, Crypto and Emerging Trends','Risk Management / Insurance'];
@@ -1244,8 +1247,8 @@ function renderReport(data){
 
   const html=`
   <div class="stat-grid">
-    <div class="stat-card"><div class="stat-num">${n}</div><div class="stat-label">Total Responses</div><div class="stat-sub">${rate}% of ${TOTAL_BATCH} batch</div></div>
-    <div class="stat-card"><div class="stat-num">${TOTAL_BATCH-n}</div><div class="stat-label">Yet to Respond</div><div class="stat-sub">Follow up needed</div></div>
+    <div class="stat-card"><div class="stat-num">${n}</div><div class="stat-label">Total Responses</div><div class="stat-sub">${data.filter(r=>r['Batch']&&r['Batch'].includes('26-28')).length} from 26-28 · ${data.filter(r=>r['Batch']&&r['Batch'].includes('25-27')).length} from 25-27</div></div>
+    <div class="stat-card"><div class="stat-num">${pendingPRNs.length}</div><div class="stat-label">Yet to Respond</div><div class="stat-sub">From 26-28 batch (${Object.keys(DB).length} total)</div></div>
     <div class="stat-card"><div class="stat-num">${n?Math.round(data.reduce((s,r)=>s+parseInt(r['Knowledge Level (1-5)']||0),0)/n*10)/10:'—'}</div><div class="stat-label">Avg Finance Knowledge</div><div class="stat-sub">out of 5</div></div>
     <div class="stat-card"><div class="stat-num">${n>0?(Object.entries(NT).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—'):'—'}</div><div class="stat-label">Top News Time</div><div class="stat-sub">Best time to post updates</div></div>
   </div>
