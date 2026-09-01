@@ -56,7 +56,7 @@
 .hero h1{font-family:'Sora',sans-serif;font-size:clamp(24px,6vw,42px);color:#fff;line-height:1.15;margin-bottom:10px}
 .hero h1 span{color:var(--gold)}
 .hero p{color:rgba(255,255,255,.65);font-size:14px;max-width:500px;margin:0 auto;line-height:1.6}
-.admin-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:11px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;transition:all .18s;letter-spacing:.5px}
+.admin-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;transition:all .18s;letter-spacing:.5px;white-space:nowrap}
 .admin-btn:hover{background:rgba(255,255,255,.2);color:#fff}
 
 /* ── PROGRESS ── */
@@ -298,7 +298,9 @@
 
 <!-- ── HERO ── -->
 <div class="hero" id="heroSection">
-  <button class="admin-btn" onclick="showAdminLogin()">⚙ Admin Report</button>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:8px;position:relative;z-index:2">
+    <button class="admin-btn" onclick="showAdminLogin()">⚙ Admin Report</button>
+  </div>
   <div class="hero-deco">
     <!-- Subtle dot grid background -->
     <svg class="deco-grid" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
